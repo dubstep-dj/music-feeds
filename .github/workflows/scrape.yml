@@ -1,0 +1,36 @@
+name: Run Music Scraper
+
+on:
+  schedule:
+    # Runs automatically every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Gives you a manual button to test anytime
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows the automated script to save files to your repository
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Initialize Python Environment
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Fetch Core Scraping Libraries
+      run: |
+        pip install beautifulsoup4 requests
+
+    - name: Execute Scraper Engine
+      run: python scraper.py
+
+    - name: Save Changes and Publish Feed
+      run: |
+        git config --global user.name "GitHub Automation Scraper"
+        git config --global user.email "username@users.noreply.github.com"
+        git add feed.xml
+        git commit -m "Updated track listings: $(date -u)" || exit 0
+        git push
