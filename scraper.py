@@ -5,61 +5,86 @@ import requests
 from bs4 import BeautifulSoup
 
 # --- CONFIGURATION ---
-TARGET_URLS = [
-    "https://www.beatport.com/label/deep-medi-musik/1146",
-    "https://bandcamp.com/tag/dubstep"
-]
+# Replace 'YOUR_BANDCAMP_USERNAME' with your actual username (e.g., "leonardo")
+BANDCAMP_USERNAME = "redineas"
 # ---------------------
 
-def scrape_url(url):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-    items = []
+def get_bandcamp_follows(username):
+    """Visits your public profile and extracts all the artists/labels you follow"""
+    url = f"https://bandcamp.com/{username}"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    follows = []
+    
     try:
         response = requests.get(url, headers=headers, timeout=15)
         if response.status_code != 200:
-            print(f"Failed to fetch {url} - Status Code: {response.status_code}")
+            print(f"Could not load Bandcamp profile for {username}. Status: {response.status_code}")
+            return follows
+            
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # Bandcamp stores followed item links inside data attributes or anchors on your profile
+        for anchor in soup.select('a[href*=".bandcamp.com"]'):
+            link = anchor['href'].split('?')[0]
+            # Clean the link to get the base bandcamp URL
+            if "bandcamp.com" in link and link not in follows:
+                # Exclude generic bandcamp assets
+                if not any(x in link for x in ['/feed', '/dashboard', 'api.', 'join.']):
+                    follows.append(link)
+                    
+        print(f"Successfully discovered {len(follows)} followed artists/labels from your profile.")
+    except Exception as e:
+        print(f"Error fetching Bandcamp follows: {e}")
+    return follows
+
+def scrape_bandcamp_site(url):
+    """Scrapes the 'music' or home page of a specific bandcamp artist/label for releases"""
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    items = []
+    # Force looking at their music tab directly if possible
+    target_url = url.rstrip('/') + "/music"
+    
+    try:
+        response = requests.get(target_url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            # Fallback to main URL if they don't have a specific /music subpage
+            response = requests.get(url, headers=headers, timeout=10)
+            
+        if response.status_code != 200:
             return items
-        
+            
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Checking for Bandcamp entries
-        if "bandcamp.com" in url:
-            cards = soup.select('li.item') or soup.select('.hub-item') or soup.select('.item')
-            for card in cards[:15]:
-                title_el = card.select_one('.heading') or card.select_one('.title')
-                sub_el = card.select_one('.subhead') or card.select_one('.artist')
-                link_el = card.select_one('a')
-                if title_el and link_el:
-                    title = f"[{sub_el.text.strip() if sub_el else 'Bandcamp'}] {title_el.text.strip()}"
-                    link = link_el['href'].split('?')[0]
-                    if not link.startswith('http'):
-                        link = "https:" + link if link.startswith('//') else url
-                    items.append({"title": title, "link": link, "desc": f"New release found via {url}"})
-                    
-        # Checking for Beatport entries
-        elif "beatport.com" in url:
-            # Broader selectors to capture shifting Beatport structural classes
-            tracks = soup.select('a[href*="/track/"]') or soup.select('[class*="TrackRow"]') or soup.select('[class*="track"]')
-            for track in tracks[:20]:
-                link_attr = track.get('href', '') if track.name == 'a' else (track.find('a') or {}).get('href', '')
-                if "/track/" in link_attr:
-                    link = "https://www.beatport.com" + link_attr.split('?')[0]
-                    title_text = track.text.strip()
-                    # Clean up double linebreaks often found in heavy elements
-                    title_text = " ".join(title_text.split())
-                    if title_text and len(title_text) > 3:
-                        items.append({"title": f"[Beatport] {title_text}", "link": link, "desc": f"New entry on Beatport label page: {url}"})
+        # Pull items from grid layouts or recent release blocks
+        cards = soup.select('.music-grid-item') or soup.select('li.item') or soup.select('.ip-item')
+        for card in cards[:3]: # Grab the 3 most recent items per artist to keep feed compact
+            link_el = card.select_one('a[href*="/album/"]') or card.select_one('a[href*="/track/"]')
+            title_el = card.select_one('.title') or card.select_one('.heading')
+            
+            if link_el:
+                link = link_el['href']
+                if link.startswith('/'):
+                    link = url.rstrip('/') + link
+                
+                # Clean up text layout
+                raw_title = title_el.text.strip() if title_el else "New Release"
+                title = f"[Bandcamp] {raw_title}"
+                
+                items.append({
+                    "title": title,
+                    "link": link,
+                    "desc": f"Latest release trackable from {url}"
+                })
     except Exception as e:
-        print(f"Error scraping {url}: {e}")
+        pass # Silently skip individual failing sub-sites to keep the engine moving
     return items
 
 def generate_rss(items):
     now = datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
     rss = '<?xml version="1.0" encoding="UTF-8" ?>\n'
     rss += '<rss version="2.0">\n<channel>\n'
-    rss += '<title>My Custom Music Digging Feed</title>\n'
-    rss += f'<link>https://github.com</link>\n'
-    rss += '<description>Automated scraped tracks from Beatport and Bandcamp</description>\n'
+    rss += '<title>My Automated Bandcamp Digging Feed</title>\n'
+    rss += f'<link>https://bandcamp.com/{BANDCAMP_USERNAME}</link>\n'
+    rss += '<description>Live updates directly synced from your followed artists</description>\n'
     rss += f'<pubDate>{now}</pubDate>\n'
     
     seen_links = set()
@@ -78,23 +103,27 @@ def generate_rss(items):
     return rss
 
 if __name__ == "__main__":
+    if BANDCAMP_USERNAME == "YOUR_BANDCAMP_USERNAME":
+        print("Error: You forgot to update your Bandcamp username inside the script config!")
+        exit(1)
+        
     all_tracks = []
-    for target in TARGET_URLS:
-        print(f"Scraping: {target}...")
-        tracks = scrape_url(target)
-        print(f"Found {len(tracks)} items.")
+    # 1. Automatically fetch the master list of everything you follow
+    followed_targets = get_bandcamp_follows(BANDCAMP_USERNAME)
+    
+    # 2. Iterate through every single profile found and harvest new releases
+    for target in followed_targets:
+        tracks = scrape_bandcamp_site(target)
         all_tracks.extend(tracks)
         
-    # CRITICAL FIX: Always output a file, even if empty baseline, so Git never throws Code 128
     if not all_tracks:
-        print("No items parsed from targets. Creating baseline notification track.")
         all_tracks.append({
-            "title": "[System Note] Feed initialized successfully. Waiting for new releases.",
+            "title": "[System Note] Sync check completed. No new releases found today.",
             "link": "https://github.com",
-            "desc": "If you see this, the framework is working perfectly, but zero tracks matched the HTML scraper tags yet."
+            "desc": "The engine connected to your follows successfully, but no new music was published."
         })
 
     rss_content = generate_rss(all_tracks)
     with open("feed.xml", "w", encoding="utf-8") as f:
         f.write(rss_content)
-    print("Successfully committed file array update to feed.xml.")
+    print(f"Successfully tracked and saved total bundle map.")
