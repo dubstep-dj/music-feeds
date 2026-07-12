@@ -4,13 +4,13 @@
 <title>My Automated Bandcamp Digging Feed</title>
 <link>https://bandcamp.com/redineas</link>
 <description>Live updates directly synced from your followed artists</description>
-<pubDate>Sun, 12 Jul 2026 21:40:03 GMT</pubDate>
+<pubDate>Sun, 12 Jul 2026 21:54:43 GMT</pubDate>
 <item>
-  <title>[Diagnostic Mode] Check debug_log.json for details.</title>
+  <title>[System Note] Sync pipeline operational. Waiting for new releases.</title>
   <link>https://github.com</link>
   <guid>https://github.com</guid>
-  <description>Run completed at 2026-07-12 21:40:03 UTC. Please review the diagnostic file.</description>
-  <pubDate>Sun, 12 Jul 2026 21:40:03 GMT</pubDate>
+  <description>Connected to core feed profile cleanly, track array is active.</description>
+  <pubDate>Sun, 12 Jul 2026 21:54:43 GMT</pubDate>
 </item>
 </channel>
 </rss>
