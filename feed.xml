@@ -4,13 +4,13 @@
 <title>My Automated Bandcamp Digging Feed</title>
 <link>https://bandcamp.com/redineas</link>
 <description>Live updates directly synced from your followed artists</description>
-<pubDate>Sun, 12 Jul 2026 21:33:35 GMT</pubDate>
+<pubDate>Sun, 12 Jul 2026 21:40:03 GMT</pubDate>
 <item>
   <title>[Diagnostic Mode] Check debug_log.json for details.</title>
   <link>https://github.com</link>
   <guid>https://github.com</guid>
-  <description>Run completed at 2026-07-12 21:33:35 UTC. Please review the diagnostic file.</description>
-  <pubDate>Sun, 12 Jul 2026 21:33:35 GMT</pubDate>
+  <description>Run completed at 2026-07-12 21:40:03 UTC. Please review the diagnostic file.</description>
+  <pubDate>Sun, 12 Jul 2026 21:40:03 GMT</pubDate>
 </item>
 </channel>
 </rss>
