@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0">
 <channel>
-<title>My Custom Music Digging Feed</title>
-<link>https://github.com</link>
-<description>Automated scraped tracks from Beatport and Bandcamp</description>
-<pubDate>Sun, 12 Jul 2026 20:19:19 GMT</pubDate>
+<title>My Automated Bandcamp Digging Feed</title>
+<link>https://bandcamp.com/redineas</link>
+<description>Live updates directly synced from your followed artists</description>
+<pubDate>Sun, 12 Jul 2026 20:32:44 GMT</pubDate>
 <item>
-  <title>[System Note] Feed initialized successfully. Waiting for new releases.</title>
+  <title>[System Note] Sync check completed. No new releases found today.</title>
   <link>https://github.com</link>
   <guid>https://github.com</guid>
-  <description>If you see this, the framework is working perfectly, but zero tracks matched the HTML scraper tags yet.</description>
+  <description>The engine connected to your follows successfully, but no new music was published.</description>
 </item>
 </channel>
 </rss>
